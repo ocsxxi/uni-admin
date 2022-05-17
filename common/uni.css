@@ -447,12 +447,10 @@ button:after {
 }
 
 .uni-stat__actived {
-	outline: 1px solid #2979ff;
+	/* outline: 1px solid #2979ff; */
 }
 
 .flex {
-	width: 100%;
-	/* 必要的 */
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -540,8 +538,11 @@ button:after {
 		border-bottom: 1px #f5f5f5 solid;
 	}
 
-	.uni-stat-datetime-picker {
-		/* flex: 1; */
+	.flex {
+		width: 100%;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
 	}
 }
 
