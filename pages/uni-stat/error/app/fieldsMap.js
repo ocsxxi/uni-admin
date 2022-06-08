@@ -1,5 +1,5 @@
 const fieldsMap = [{
-	title: '创建时间',
+	title: '报错时间',
 	field: 'create_time',
 	tooltip: '',
 	formatter: '',
@@ -168,13 +168,15 @@ const fieldsMap = [{
 	formatter: '',
 	tooltip: 'Android的apk版本名称；iOS的ipa版本名称',
 	filter: "search"
-}, {
-	title: 'APP使用的内存量',
-	field: 'app_use_memory_size',
-	formatter: '',
-	tooltip: '单位为Byte',
-	filter: "search"
-}, {
+},
+// {
+// 	title: 'APP使用的内存量',
+// 	field: 'app_use_memory_size',
+// 	formatter: '',
+// 	tooltip: '单位为Byte',
+// 	filter: "search"
+// },
+{
 	title: '页面url',
 	field: 'page_url',
 	formatter: '',
