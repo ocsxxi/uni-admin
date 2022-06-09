@@ -36,7 +36,7 @@
 			</view>
 
 			<view class="uni-stat--x p-m">
-				<uni-table :loading="loading" border stripe :emptyText="$t('common.empty')" style="overflow-y: scroll;">
+				<uni-table :loading="loading" border stripe :emptyText="$t('common.empty')">
 					<uni-tr>
 						<template v-for="(mapper, index) in fieldsMap">
 							<uni-th v-if="mapper.title" :key="index" align="center">
@@ -73,7 +73,7 @@
 						</template>
 						<uni-td>
 							<button size="mini" type="primary" style="white-space: nowrap;"
-								@click="openErrPopup(item.msgTooltip)">详 情</button>
+								@click="openErrPopup(item)">详 情</button>
 						</uni-td>
 					</uni-tr>
 				</uni-table>
@@ -98,13 +98,18 @@
 				</view>
 				<scroll-view scroll-x="true" scroll-y="true">
 					<view class="modal-content" style="padding: 20px 30px;">
-						<view v-if="msgLoading" style="margin: 150px 0;height: 90%;text-align: center;font-size: 14px;">
-							<uni-load-more  class="mb-m" :showText="false" status="loading" />
+						<view v-if="msgLoading" style="margin: 150px 0;text-align: center;font-size: 14px;">
+							<uni-load-more class="mb-m" :showText="false" status="loading" />
 							<view>正在解析，请稍等...</view>
 						</view>
-						<pre>{{errMsg}}</pre>
+						<!-- <pre>{{errMsg}}</pre> -->
+						<text>{{errMsg}}</text>
 					</view>
 				</scroll-view>
+				<view class="dialog-close" @click="closePopup">
+					<view class="dialog-close-plus" data-id="close"></view>
+					<view class="dialog-close-plus dialog-close-rotate" data-id="close"></view>
+				</view>
 			</view>
 		</uni-popup>
 
@@ -392,7 +397,7 @@
 				const mainTableTemp = db.collection('uni-stat-error-result').where(query).getTemp()
 				const versions = db.collection('uni-stat-app-versions')
 					.where(filterAppid)
-					.orderBy('start_time ', 'desc ')
+					.orderBy('count', 'desc ')
 					.getTemp()
 
 				const platforms = db.collection('uni-stat-app-platforms')
@@ -420,6 +425,7 @@
 							const p = item.platform_id[0]
 							item.version = v && v.version
 							item.platform = p && p.name
+							item.platform_code = p && p.code
 							tempData.push(item)
 						}
 						this.getTotalCount(query).then(res => {
@@ -478,7 +484,9 @@
 				})
 				return strArr.join()
 			},
-			openErrPopup(err) {
+			openErrPopup(item) {
+				console.log('.........item', item);
+				const err = item.msgTooltip
 				if (this.msgLoading) return
 				this.$refs.errMsg.open()
 				if (!err) {
@@ -488,16 +496,63 @@
 				const oldMsg = this.parsedErrors[err]
 				if (!oldMsg || oldMsg === err) {
 					this.msgLoading = true
-					this.parseError(err)
+					this.parseError(item)
 				} else {
 					this.errMsg = oldMsg
 				}
 			},
-			parseError(err) {
+			closePopup() {
+				this.$refs.errMsg.close()
+			},
+			parseError(item) {
+				let {
+					msgTooltip: err,
+					appid,
+					platform_code,
+					version
+				} = item
+
+				console.log('’。。。。。。', err);
+				const sourcemapUrl =
+					'https://7463-tcb-uzyfn59tqxjxtnbab2e2c-5ba40b-1303909289.tcb.qcloud.la/__UNI__/uni-stat/sourcemap'
+				let base = `${sourcemapUrl}/__UNI_APPID__/h5/3.3.8`
+				if (platform_code === 'web') {
+					base = `${sourcemapUrl}/__UNI_APPID__/h5/3.3.8`
+				} else if (platform_code === 'android' || platform_code === 'ios') {
+					base = `${sourcemapUrl}/__UNI_APPID__/app-plus/${version}`
+				} else if (platform_code.indexOf('mp-') > -1) {
+					err = err.replace(/['"]+/g, '')
+					version = '3.4.12'
+					base = `${sourcemapUrl}/__UNI_APPID__/${platform_code}/${version}`
+					const preset = uniStracktraceyPreset({
+						base
+					});
+					setTimeout(() => {
+						console.log('..........mp');
+						stacktracey(err, {
+							preset,
+						}).then(wxErrRes => {
+							stacktracey(wxErrRes, {
+								preset,
+							}).then(res => {
+								this.errMsg = res
+								this.parsedErrors[err] = res
+							}).finally(() => {
+								this.msgLoading = false
+							});
+						}).finally(() => {
+							this.msgLoading = false
+						});
+					}, 100)
+					return
+				} else {
+					base = `${sourcemapUrl}/__UNI_APPID__/${platform_code}/${version}`
+				}
 				const preset = uniStracktraceyPreset({
-					base: 'https://7463-tcb-uzyfn59tqxjxtnbab2e2c-5ba40b-1303909289.tcb.qcloud.la/__UNI__/uni-stat/sourcemap/__UNI_APPID__/h5/3.3.8',
+					base
 				});
 				setTimeout(() => {
+					console.log('..........other');
 					stacktracey(err, {
 						preset,
 					}).then(res => {
@@ -506,7 +561,7 @@
 					}).finally(() => {
 						this.msgLoading = false
 					});
-				},100)
+				}, 100)
 			}
 		}
 
@@ -524,8 +579,37 @@
 	.uni-stat-tooltip-s {
 		width: 160px;
 		white-space: normal;
- 	}
+	}
+
 	.black-theme {
-		background-color: #333;color: #fff;
+		background-color: #333;
+		color: #fff;
+	}
+
+	.dialog-close {
+		cursor: pointer;
+		position: absolute;
+		top: 0;
+		right: 0;
+		/* #ifndef APP-NVUE */
+		display: flex;
+		/* #endif */
+		flex-direction: row;
+		align-items: center;
+		padding: 20px;
+		margin-top: 10px;
+	}
+
+	.dialog-close-plus {
+		width: 20px;
+		height: 2px;
+		background-color: #fff;
+		border-radius: 2px;
+		transform: rotate(45deg);
+	}
+
+	.dialog-close-rotate {
+		position: absolute;
+		transform: rotate(-45deg);
 	}
 </style>
