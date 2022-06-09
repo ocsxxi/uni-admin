@@ -36,6 +36,13 @@
 			</view>
 
 			<view class="uni-stat--x p-m">
+				<view class="flex-between">
+					<view class="uni-stat-card-header">信息列表</view>
+					<view class="uni-group">
+						<button class="uni-button" type="primary" size="mini" @click="openUploadPopup">上传
+							sourcemap</button>
+					</view>
+				</view>
 				<uni-table :loading="loading" border stripe :emptyText="$t('common.empty')">
 					<uni-tr>
 						<template v-for="(mapper, index) in fieldsMap">
@@ -106,9 +113,35 @@
 						<text>{{errMsg}}</text>
 					</view>
 				</scroll-view>
-				<view class="dialog-close" @click="closePopup">
+				<view class="dialog-close" @click="closeErrPopup">
 					<view class="dialog-close-plus" data-id="close"></view>
 					<view class="dialog-close-plus dialog-close-rotate" data-id="close"></view>
+				</view>
+			</view>
+		</uni-popup>
+
+		<uni-popup ref="upload" type="center" :animation="false" :maskClick="true">
+			<view class="modal">
+				<view class="modal-header">
+					上传文件
+				</view>
+				<view class="modal-content" style="padding: 20px 30px;">
+					<uni-data-select collection="opendb-app-list" field="appid as value, name as text"
+						orderby="text asc" label="选择应用" v-model="uploadOptions.appid" />
+					<uni-data-select collection="uni-stat-app-platforms" field="_id as value, name as text"
+						orderby="text asc" label="选择平台" v-model="uploadOptions.platform_id" @change="changePlatform" />
+					<uni-data-select collection="uni-stat-app-versions" :where="uploadVersionQuery"
+						field="_id as value, version as text" orderby="text asc" label="选择版本"
+						v-model="uploadOptions.version_id" />
+					<view class="flex m-m">
+						<view class="label-text">选择文件:</view>
+						<button class="uni-button ml-m" type="default" size="mini" @click="openUploadPopup">打开文件夹</button>
+					</view>
+				</view>
+				<view class="dialog-close" @click="closeUploadPopup">
+					<view class="dialog-close-plus" style="background-color: #333;" data-id="close"></view>
+					<view class="dialog-close-plus dialog-close-rotate" style="background-color: #333;" data-id="close">
+					</view>
 				</view>
 			</view>
 		</uni-popup>
@@ -163,6 +196,11 @@
 					version_id: '',
 					start_time: [],
 				},
+				uploadOptions: {
+					appid: "",
+					platform_id: '',
+					version_id: '',
+				},
 				options: {
 					pageCurrent: 1, // 当前页
 					total: 0, // 数据总量
@@ -210,6 +248,17 @@
 					platform_id
 				})
 				return query
+			},
+			uploadVersionQuery() {
+				const {
+					appid,
+					platform_id
+				} = this.uploadOptions
+				const query = stringifyQuery({
+					appid,
+					platform_id
+				})
+				return query
 			}
 		},
 		created() {
@@ -234,6 +283,7 @@
 			},
 			changePlatform() {
 				this.query.version_id = 0
+				this.uploadOptions.version_id = 0
 			},
 			changeTimeRange(id, index) {
 				this.currentDateTab = index
@@ -501,7 +551,7 @@
 					this.errMsg = oldMsg
 				}
 			},
-			closePopup() {
+			closeErrPopup() {
 				this.$refs.errMsg.close()
 			},
 			parseError(item) {
@@ -562,13 +612,36 @@
 						this.msgLoading = false
 					});
 				}, 100)
-			}
+			},
+			openUploadPopup() {
+				const {
+					appid,
+					platform_id,
+					version_id
+				} = this.query
+
+				this.uploadOptions = {
+					appid,
+					platform_id,
+					version_id
+				}
+				this.$refs.upload.open()
+			},
+			closeUploadPopup() {
+				this.$refs.upload.close()
+			},
 		}
 
 	}
 </script>
 
 <style>
+	.flex-between {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
 	.uni-stat-panel {
 		box-shadow: unset;
 		border-bottom: 1px solid #eee;
