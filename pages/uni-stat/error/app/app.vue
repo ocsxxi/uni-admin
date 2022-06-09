@@ -263,7 +263,7 @@
 					version_id,
 					start_time
 				} = this.query
-				const platforms = uni.getStorageSync('platform_last_data')
+				const platforms = uni.getStorageSync('platform_channel_last_data')
 				const versions = uni.getStorageSync('uni-stat-app-versions_last_data')
 				const p = Array.isArray(platforms) && platforms.find(p => p._id === platform_id)
 				const v = Array.isArray(versions) && versions.find(v => v._id === version_id)
@@ -293,8 +293,8 @@
 				this.getAllData(this.queryStr)
 				this.where = this.tableQuery
 				this.$nextTick(() => {
-					this.$refs.udb.loadData()
-				})
+					this.$refs.udb && this.$refs.udb.loadData()
+				}, 200)
 			})
 		},
 		watch: {
