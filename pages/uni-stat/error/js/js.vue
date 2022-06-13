@@ -39,8 +39,10 @@
 				<view class="flex-between">
 					<view class="uni-stat-card-header">信息列表</view>
 					<view class="uni-group">
+						<!-- #ifdef H5 -->
 						<button class="uni-button" type="primary" size="mini" @click="openUploadPopup">上传
 							sourcemap</button>
+						<!-- #endif -->
 					</view>
 				</view>
 				<uni-table :loading="loading" border stripe :emptyText="$t('common.empty')">
@@ -120,12 +122,13 @@
 			</view>
 		</uni-popup>
 
+		<!-- #ifdef H5 -->
 		<uni-popup ref="upload" type="center" :animation="false" :maskClick="true">
 			<view class="modal">
 				<view class="modal-header">
 					上传文件
 				</view>
-				<view class="modal-content" style="padding: 20px 30px;">
+				<view class="modal-content" style="height: 400px;padding: 20px 30px;">
 					<uni-data-select collection="opendb-app-list" field="appid as value, name as text"
 						orderby="text asc" label="选择应用" v-model="uploadOptions.appid" />
 					<uni-data-select collection="uni-stat-app-platforms" field="_id as value, name as text"
@@ -135,9 +138,17 @@
 						v-model="uploadOptions.version_id" />
 					<view class="flex m-m">
 						<view class="label-text">选择文件:</view>
-						<button class="uni-button ml-m" type="default" size="mini" @click="openUploadPopup">打开文件夹</button>
+						<button class="uni-button ml-m" type="primary" @click="choosefile">选择文件并上传</button>
+					</view>
+					<view v-if="!vaildate" class="upload-msg-warning">
+						{{uploadMsg}}
 					</view>
 				</view>
+			<!-- 	<view class="modal-footer">
+					<view class="uni-group">
+						<button class="uni-button" type="primary" @click="uploadFile">上传</button>
+					</view>
+				</view> -->
 				<view class="dialog-close" @click="closeUploadPopup">
 					<view class="dialog-close-plus" style="background-color: #333;" data-id="close"></view>
 					<view class="dialog-close-plus dialog-close-rotate" style="background-color: #333;" data-id="close">
@@ -145,6 +156,7 @@
 				</view>
 			</view>
 		</uni-popup>
+		<!-- #endif -->
 
 		<!-- #ifndef H5 -->
 		<fix-window />
@@ -153,11 +165,6 @@
 </template>
 
 <script>
-	import {
-		stacktracey,
-		uniStracktraceyPreset
-	} from '@dcloudio/uni-stacktracey';
-
 	import {
 		mapfields,
 		stringifyQuery,
@@ -172,6 +179,10 @@
 		fieldsMap,
 		popupFieldsMap
 	} from './fieldsMap.js'
+	import {
+		stacktracey,
+		uniStracktraceyPreset
+	} from '@dcloudio/uni-stacktracey';
 
 	const panelOption = [{
 		title: '错误总数',
@@ -201,6 +212,7 @@
 					platform_id: '',
 					version_id: '',
 				},
+				uploadMsg: '',
 				options: {
 					pageCurrent: 1, // 当前页
 					total: 0, // 数据总量
@@ -224,7 +236,7 @@
 					name: '错误率'
 				}],
 				errMsg: '',
-				msgLoading: false
+				msgLoading: false,
 			}
 		},
 		computed: {
@@ -259,6 +271,13 @@
 					platform_id
 				})
 				return query
+			},
+			vaildate(){
+				const allItemHasVaule = Object.keys(this.uploadOptions).every(k => this.uploadOptions[k])
+				if (allItemHasVaule && this.uploadMsg) {
+					this.uploadMsg = ''
+				}
+				return allItemHasVaule
 			}
 		},
 		created() {
@@ -278,6 +297,8 @@
 			}
 		},
 		methods: {
+			uploadFile,
+
 			useDatetimePicker() {
 				this.currentDateTab = -1
 			},
@@ -447,14 +468,13 @@
 				const mainTableTemp = db.collection('uni-stat-error-result').where(query).getTemp()
 				const versions = db.collection('uni-stat-app-versions')
 					.where(filterAppid)
-					.orderBy('count', 'desc ')
 					.getTemp()
 
 				const platforms = db.collection('uni-stat-app-platforms')
 					.getTemp()
 
 				db.collection(mainTableTemp, versions, platforms)
-					.orderBy('last_time', 'desc')
+					.orderBy('count', 'desc')
 					.skip((pageCurrent - 1) * this.pageSize)
 					.limit(this.pageSize)
 					.get({
@@ -535,7 +555,6 @@
 				return strArr.join()
 			},
 			openErrPopup(item) {
-				console.log('.........item', item);
 				const err = item.msgTooltip
 				if (this.msgLoading) return
 				this.$refs.errMsg.open()
@@ -562,7 +581,6 @@
 					version
 				} = item
 
-				console.log('’。。。。。。', err);
 				const sourcemapUrl =
 					'https://7463-tcb-uzyfn59tqxjxtnbab2e2c-5ba40b-1303909289.tcb.qcloud.la/__UNI__/uni-stat/sourcemap'
 				let base = `${sourcemapUrl}/__UNI_APPID__/h5/3.3.8`
@@ -602,7 +620,6 @@
 					base
 				});
 				setTimeout(() => {
-					console.log('..........other');
 					stacktracey(err, {
 						preset,
 					}).then(res => {
@@ -630,6 +647,56 @@
 			closeUploadPopup() {
 				this.$refs.upload.close()
 			},
+			choosefile() {
+				if (!this.vaildate) {
+					this.uploadMsg = '请先选择应用、平台、版本'
+					return
+				}
+				const { appid, platform_id, version_id } = this.uploadOptions
+				const platforms = uni.getStorageSync('platform_last_data')
+				const versions = uni.getStorageSync('uni-stat-app-versions_last_data')
+				const platform = Array.isArray(platforms) && platforms.find(p => p._id === platform_id).code
+				const version = Array.isArray(versions) && versions.find(v => v._id === version_id).text
+				const prefix = `__UNI__/uni-stat/sourcemap/${appid}/${platform}/${version}/`
+				console.log('...........prefix', prefix);
+				const goalCloud = uniCloud.init({
+					provider: 'tencent',
+					spaceId: 'tcb-uzyfn59tqxjxtnbab2e2c-5ba40b'
+				})
+				const inputEl = !inputEl && document.createElement('input')
+				inputEl.type = 'file'
+				inputEl.directory = true
+				inputEl.webkitdirectory = true
+				inputEl.click()
+				inputEl.addEventListener('change', function() {
+					const fileList = this.files; /* now you can work with the file list */
+					if (!fileList.length) return
+					const filePromises = []
+					fileList.forEach(file => {
+						const filePath = file.webkitRelativePath
+						const filePromise = goalCloud.uploadFile({
+							filePath,
+							cloudPath: prefix + filePath,
+							onUploadProgress: function(progressEvent) {
+								console.log(progressEvent);
+								var percentCompleted = Math.round(
+									(progressEvent.loaded * 100) / progressEvent.total
+								);
+							}
+						})
+						filePromises.push(filePromise)
+						console.log(filePromise);
+					})
+					// 上传已成功（注意需上传腾讯云空间）
+					// todo： 上传进度
+					Promise.all(filePromises).then(results => {
+						console.log('............results:', results);
+					}).catch(err => {
+						console.log('.............err:', err);
+					})
+
+				})
+			}
 		}
 
 	}
@@ -637,6 +704,7 @@
 
 <style>
 	.flex-between {
+		margin-bottom: 10px;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
@@ -684,5 +752,11 @@
 	.dialog-close-rotate {
 		position: absolute;
 		transform: rotate(-45deg);
+	}
+
+	.upload-msg-warning {
+		padding: 30px 15px;
+		color: red;
+		font-size: 14px;
 	}
 </style>

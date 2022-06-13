@@ -481,7 +481,7 @@ button:after {
 .modal {
 	/* width: 100%; */
 	max-width: calc(100vw - 200px);
-	min-width: 800px;
+	min-width: 600px;
 	margin: 0 auto;
 	background-color: #FFFFFF;
 }
@@ -490,6 +490,14 @@ button:after {
 	padding: 20px 0;
 	text-align: center;
 	border-bottom: 1px solid #eee;
+}
+
+.modal-footer {
+	padding: 20px;
+	display: flex;
+	justify-content: end;
+	align-items: center;
+	/* border-top: 1px solid #eee; */
 }
 
 .modal-content {
