@@ -37,10 +37,12 @@
 				<view class="flex-between">
 					<view class="uni-stat-card-header">信息列表</view>
 					<view class="uni-group">
+						<!-- #ifdef H5 -->
 						<download-excel class="hide-on-phone" :fields="exportExcel.fields" :data="exportExcelData"
 							:type="exportExcel.type" :name="exportExcel.filename">
 							<button class="uni-button" type="primary" size="mini">导出 Excel</button>
 						</download-excel>
+						<!-- #endif -->
 					</view>
 				</view>
 
@@ -494,6 +496,7 @@
 
 <style>
 	.flex-between {
+		margin-bottom: 10px;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
