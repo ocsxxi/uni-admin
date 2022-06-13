@@ -18,11 +18,11 @@ function stringifyQuery(query, dimension = false) {
 					val = `"${val}"`
 				}
 				if (Array.isArray(val)) {
-					if (val.length === 2) {
+					if (val.length === 2 && key.indexOf('time')> -1) {
 						queryArr.push(`${key} >= ${val[0]} && ${key} <= ${val[1]}`)
-					}
-					if (val.length === 1) {
-						queryArr.push(`${key} == ${val[0]}`)
+					} else {
+						val = val.map(item => `${key} == "${item}"`).join(' || ')
+						val && queryArr.push(`(${val})`)
 					}
 				} else if (dimension && key === 'dimension') {
 					if (maxDeltaDay(time)) {
@@ -285,16 +285,16 @@ function getFieldTotal(query = this.query, field = "total_devices") {
 	const db = uniCloud.database()
 	return db.collection('uni-stat-result')
 		.where(query)
-		.field(`${stringifyField(this.fieldsMap, field)}, start_time`)
+		.field(`${field} as temp_${field}, start_time`)
 		.groupBy('start_time')
-		.groupField(stringifyGroupField(this.fieldsMap, field))
+		.groupField(`sum(temp_${field}) as ${field}`)
 		.orderBy('start_time', 'desc')
 		.get()
 		.then(cur => {
 			const data = cur.result.data
 			fieldTotal = data.length && data[0][field]
 			fieldTotal = format(fieldTotal)
-			this.panelData.forEach(item => {
+			this.panelData && this.panelData.forEach(item => {
 				if (item.field === field) {
 					item.value = fieldTotal
 				}

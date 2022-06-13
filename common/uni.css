@@ -59,7 +59,7 @@ uni-page-head .uni-btn-icon {
 
 .uni-app--showleftwindow .uni-container .uni-forms {
 	padding: 15px;
-	max-width: 600px;
+	max-width: 650px;
 }
 
 /* #endif */
@@ -284,9 +284,9 @@ uni-page-head .uni-btn-icon {
 .uni-form-item-tips {
 	color: #999;
 	font-size: 12px;
-	margin-top: 3px;
-	position: absolute;
-	top: 40px;
+	margin-top: 10px;
+	/* position: absolute; */
+	/* top: 40px; */
 
 }
 
@@ -479,8 +479,9 @@ button:after {
 
 /* uni-popup modal start */
 .modal {
-	width: 100%;
-	max-width: 980px;
+	/* width: 100%; */
+	max-width: calc(100vw - 200px);
+	min-width: 800px;
 	margin: 0 auto;
 	background-color: #FFFFFF;
 }
@@ -493,7 +494,7 @@ button:after {
 
 .modal-content {
 	padding: 15px;
-	height: 500px;
+	height: 600px;
 	box-sizing: border-box;
 }
 

@@ -9,13 +9,19 @@
 </template>
 
 <script>
-	import { buildMenus } from './util.js'
+	import {
+		mapActions
+	} from 'vuex'
+	import {
+		buildMenus
+	} from './util.js'
 	export default {
 		data() {
 			return {
 				menus: [],
-				userMenu:[],
-				famliy:[]
+				userMenu: [],
+				famliy: [],
+
 			};
 		},
 		mixins: [uniCloud.mixinDatacom],
@@ -37,7 +43,7 @@
 			},
 			staticMenu: {
 				type: Array,
-				default() {
+				default () {
 					return []
 				}
 			}
@@ -71,14 +77,21 @@
 			},
 			$route: {
 				immediate: false,
-				handler(val) {
-					const menu = this.menus.find(m => m.url === val.path)
-					const menu_id = menu && menu.menu_id
-					this.getMenuAncestor(menu_id, this.menus)
+				handler(val, old) {
+					if (val.fullPath !== old.fullPath) {
+						this.famliy = []
+						const menu = this.menus.find(m => m.value === val.path)
+						const menu_id = menu && menu.menu_id
+						this.getMenuAncestor(menu_id, this.menus)
+						this.setRoutes && this.setRoutes(this.famliy)
+					}
 				}
 			}
 		},
 		methods: {
+			...mapActions({
+				setRoutes: 'app/setRoutes'
+			}),
 			getUserMenu(menuList) {
 				const {
 					permission,
@@ -107,8 +120,12 @@
 				return buildMenus(menuList)
 			},
 			onSelect(menu) {
+
 				this.famliy = []
 				this.getMenuAncestor(menu.menu_id, this.menus)
+				this.emit(menu)
+			},
+			emit(menu) {
 				this.$emit('select', menu, this.famliy)
 				this.$emit('input', menu.value)
 			},
@@ -136,7 +153,7 @@
 			},
 			getMenuAncestor(menuId, menus) {
 				menus.forEach(item => {
-					if (item.menu_id === menuId ) {
+					if (item.menu_id === menuId) {
 						const route = {
 							name: item.text
 						}

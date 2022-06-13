@@ -12,7 +12,12 @@
 		</view>
 		<view class="uni-container">
 			<view class="uni-stat--x flex">
-				<uni-data-select collection="opendb-app-list" field="appid as value, name as text" orderby="text asc" :defItem="1" label="应用选择" v-model="query.appid" :clear="false" />
+				<uni-data-select collection="opendb-app-list" field="appid as value, name as text" orderby="text asc"
+					:defItem="1" label="应用选择" v-model="query.appid" :clear="false" />
+				<uni-data-select collection="uni-stat-app-versions" :storage="false" :where="versionQuery"
+					field="_id as value, version as text" orderby="text asc" label="版本选择" v-model="query.version_id" />
+				<uni-stat-tabs label="平台选择" type="boldLine" mode="platform-channel" :all="false"
+					v-model="query.platform_id" @change="changePlatform" />
 				<view class="flex">
 					<uni-stat-tabs label="日期选择" :current="currentDateTab" mode="date" @change="changeTimeRange" />
 					<uni-datetime-picker type="daterange" :end="new Date().getTime()" v-model="query.start_time"
@@ -20,12 +25,6 @@
 						:class="{'uni-stat__actived': currentDateTab < 0 && !!query.start_time.length}"
 						@change="useDatetimePicker" />
 				</view>
-			</view>
-			<view class="uni-stat--x">
-				<uni-stat-tabs label="平台选择" type="boldLine" mode="platform-channel" v-model="query.platform_id"
-					@change="changePlatform" />
-				<!-- <uni-stat-select mode="version" label="版本选择" :query="versionQuery" v-model="query.version_id" /> -->
-				<uni-data-select collection="uni-stat-app-versions" field="_id as value, version as text" :where="versionQuery" label="版本选择" v-model="query.version_id" />
 			</view>
 			<view class="uni-stat--x" style="padding: 15px 0;">
 				<uni-stat-panel :items="panelData" class="uni-stat-panel" />
@@ -163,15 +162,20 @@
 				}
 			},
 			versionQuery() {
-				const platform_id = this.query.platform_id
-				return stringifyQuery({
+				const {
+					appid,
+					platform_id
+				} = this.query
+				const query = stringifyQuery({
+					appid,
 					platform_id
 				})
+				return query
 			}
 		},
-    created() {
-    		this.debounceGet = debounce(() => this.getAllData(this.queryStr))
-    },
+		created() {
+			this.debounceGet = debounce(() => this.getAllData(this.queryStr))
+		},
 		watch: {
 			query: {
 				deep: true,
@@ -186,7 +190,7 @@
 				this.currentDateTab = -1
 			},
 			changePlatform() {
-				this.query.version_id = ''
+				this.query.version_id = 0
 			},
 			changeTimeRange(id, index) {
 				this.currentDateTab = index
@@ -231,7 +235,7 @@
 					pageCurrent
 				} = this.options
 				const db = uniCloud.database()
-				db.collection( 'uni-stat-result')
+				db.collection('uni-stat-result')
 					.where(query)
 					.field(`${stringifyField(fieldsMap, field)}, start_time, channel_id`)
 					.groupBy('channel_id,start_time')
@@ -273,7 +277,7 @@
 							hasChannels.forEach((channel, index) => {
 								const c = allChannels.find(item => item._id === channel)
 								const line = options.series[index] = {
-									name: c && c.channel_code || '未知',
+									name: c && c.channel_name || '未知',
 									data: []
 								}
 								if (this.dimension === 'hour') {
@@ -323,7 +327,7 @@
 				} = this.options
 				this.loading = true
 				const db = uniCloud.database()
-				db.collection( 'uni-stat-result')
+				db.collection('uni-stat-result')
 					.where(query)
 					.field(`${stringifyField(fieldsMap)},appid, channel_id`)
 					.groupBy('appid, channel_id')
@@ -384,7 +388,7 @@
 				cloneQuery.dimension = 'day'
 				let query = stringifyQuery(cloneQuery)
 				const db = uniCloud.database()
-				const subTable = db.collection( 'uni-stat-result')
+				const subTable = db.collection('uni-stat-result')
 					.where(query)
 					.field(stringifyField(fieldsMap))
 					.groupBy('appid')
@@ -393,7 +397,7 @@
 					.get()
 					.then(res => {
 						const item = res.result.data[0]
-						item && (item.total_total_devices = 0)
+						item && (item.total_devices = 0)
 						getFieldTotal.call(this, query)
 						this.panelData = []
 						this.panelData = mapfields(fieldsMap, item)

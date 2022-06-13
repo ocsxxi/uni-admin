@@ -11,6 +11,8 @@
 			<view class="uni-stat--x flex">
 				<uni-data-select collection="opendb-app-list" field="appid as value, name as text" orderby="text asc"
 					:defItem="1" label="应用选择" v-model="query.appid" :clear="false" />
+				<uni-data-select collection="uni-stat-app-versions" :where="versionQuery"
+					field="_id as value, version as text" orderby="text asc" label="版本选择" v-model="query.version_id" />
 				<view class="flex">
 					<uni-stat-tabs label="日期选择" :current="currentDateTab" mode="date" @change="changeTimeRange" />
 					<uni-datetime-picker type="daterange" :end="new Date().getTime()" v-model="query.start_time"
@@ -31,7 +33,20 @@
 					<uni-tr>
 						<template v-for="(mapper, index) in fieldsMap">
 							<uni-th v-if="mapper.title" :key="index" align="center">
+								<!-- #ifdef MP -->
 								{{mapper.title}}
+								<!-- #endif -->
+								<!-- #ifndef MP -->
+								<uni-tooltip>
+									{{mapper.title}}
+									<uni-icons v-if="index === 0 && mapper.tooltip" type="help" color="#666" />
+									<template v-if="index === 0 && mapper.tooltip" v-slot:content>
+										<view class="uni-stat-tooltip-s">
+											{{mapper.tooltip}}
+										</view>
+									</template>
+								</uni-tooltip>
+								<!-- #endif -->
 							</uni-th>
 						</template>
 					</uni-tr>
@@ -92,6 +107,7 @@
 					dimension: "day",
 					appid: '',
 					platform_id: '',
+					version_id: '',
 					channel_id: '',
 					start_time: [],
 				},
@@ -123,6 +139,17 @@
 				return stringifyQuery({
 					platform_id
 				})
+			},
+			versionQuery() {
+				const {
+					appid,
+					platform_id
+				} = this.query
+				const query = stringifyQuery({
+					appid,
+					platform_id
+				})
+				return query
 			}
 		},
 		created() {
@@ -147,6 +174,7 @@
 			},
 			changePlatform(id) {
 				this.getChannelData(null, id)
+				this.query.version_id = 0
 			},
 			changeTimeRange(id, index) {
 				this.currentDateTab = index

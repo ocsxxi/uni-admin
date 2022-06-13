@@ -12,11 +12,11 @@
 			<view class="uni-select__selector" v-if="showSelector">
 				<view class="uni-popper__arrow"></view>
 				<scroll-view scroll-y="true" class="uni-select__selector-scroll">
-					<view class="uni-select__selector-empty" v-if="mixinDatacomResData.length === 0">
+					<view class="uni-select__selector-empty" v-if="renderData.length === 0">
 						<text>{{emptyTips}}</text>
 					</view>
-					<view v-else class="uni-select__selector-item" v-for="(item,index) in mixinDatacomResData"
-						:key="index" @click="change(item)">
+					<view v-else class="uni-select__selector-item" v-for="(item,index) in renderData" :key="index"
+						@click="change(item)">
 						<text>{{formatItemName(item)}}</text>
 					</view>
 				</scroll-view>
@@ -59,11 +59,11 @@
 				}
 			},
 			value: {
-				type: [String, Number],
+				type: [String, Number, Array],
 				default: ''
 			},
 			modelValue: {
-				type: [String, Number],
+				type: [String, Number, Array],
 				default: ''
 			},
 			label: {
@@ -82,17 +82,22 @@
 				type: Boolean,
 				default: true
 			},
+			storage: {
+				type: Boolean,
+				default: true
+			},
 			defItem: {
 				type: Number,
 				default: 0
 			}
 		},
 		created() {
+			this.getData = this.debounce(() => this.mixinDatacomEasyGet())
 			this.last_data = `${this.collection}_last_data`
 			this.last_selected = `${this.collection}_last_selected_option_value`
 			if (this.collection && !this.localdata.length) {
-				this.mixinDatacomResData = uni.getStorageSync(this.last_data)
-				this.mixinDatacomEasyGet()
+				this.storage && (this.mixinDatacomResData = uni.getStorageSync(this.last_data))
+				this.getData()
 			}
 		},
 		computed: {
@@ -107,6 +112,22 @@
 				return placeholder ?
 					common + placeholder :
 					common
+			},
+			renderData() {
+				const data = []
+				if (this.mixinDatacomResData) {
+					const uniqueNames = new Set()
+					this.mixinDatacomResData.map(v => uniqueNames.add(v.text))
+					uniqueNames.forEach(text => {
+						let value = this.mixinDatacomResData.map(v => v.text === text && v.value).filter(Boolean)
+						value = value.length < 2 ? value[0] : value
+						data.push({
+							text,
+							value
+						})
+					})
+				}
+				return data
 			}
 		},
 		watch: {
@@ -138,18 +159,31 @@
 						}
 					}
 				}
+			},
+			where(val) {
+				this.getData()
 			}
 		},
 		methods: {
+			debounce(fn, time = 100) {
+				let timer = null
+				return function(...args) {
+					if (timer) clearTimeout(timer)
+					timer = setTimeout(() => {
+						fn.apply(this, args)
+					}, time)
+				}
+			},
 			initDefVal() {
 				let defValue = ''
+				// todo:
 				if (this.value || this.value === 0) {
 					defValue = this.value
 				} else if (this.modelValue || this.modelValue === 0) {
 					defValue = this.modelValue
 				} else {
 					let strogeValue
-					if (this.collection) {
+					if (this.collection && this.storage) {
 						strogeValue = uni.getStorageSync(this.last_selected)
 					}
 					if (strogeValue || strogeValue === 0) {
@@ -163,7 +197,7 @@
 					}
 					this.emit(defValue)
 				}
-				const def = this.mixinDatacomResData.find(item => item.value === defValue)
+				const def = this.renderData.find(item => JSON.stringify(item.value) === JSON.stringify(defValue))
 				this.current = def ? this.formatItemName(def) : ''
 			},
 

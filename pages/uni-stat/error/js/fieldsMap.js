@@ -32,14 +32,10 @@ const popupFieldsMap = [{
 	title: '创建时间',
 	field: 'create_time',
 	formatter: '',
-}, {
-	title: '页面信息',
-	field: 'page_url',
-	formatter: '',
 },
 // {
-// 	title: '设备标识',
-// 	field: 'device_id',
+// 	title: '错误类型',
+// 	field: 'error_type',
 // 	formatter: '',
 // },
 {
@@ -50,15 +46,22 @@ const popupFieldsMap = [{
 	title: '客户端 user-agent 信息',
 	field: 'ua',
 	formatter: '',
-}, {
-	title: '服务空间编号',
-	field: 'space_id',
-	formatter: '',
-}, {
-	title: '服务空间提供商',
-	field: 'space_provider',
-	formatter: '',
-}]
+}
+// , {
+// 	title: '页面信息',
+// 	field: 'page_url',
+// 	formatter: '',
+// }
+// , {
+// 	title: '服务空间编号',
+// 	field: 'space_id',
+// 	formatter: '',
+// }, {
+// 	title: '服务空间提供商',
+// 	field: 'space_provider',
+// 	formatter: '',
+// },
+]
 
 export {
 	fieldsMap,

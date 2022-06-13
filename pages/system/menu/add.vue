@@ -25,8 +25,8 @@
 			<uni-forms-item name="parent_id" label="父菜单标识">
 				<uni-easyinput :disabled="true" v-model="formData.parent_id" :clearable="false" placeholder="新增菜单时自动填充, 一级菜单不需要填写" />
 			</uni-forms-item>
-			<uni-forms-item name="permission" label="权限列表" style="margin-bottom: 60px;" class="flex-center-x">
-				<uni-data-checkbox :multiple="true" v-model="formData.permission" collection="uni-id-permissions" field="permission_name as text, permission_id as value" />
+			<uni-forms-item name="permission" label="权限列表" class="flex-center-x">
+				<uni-data-checkbox :multiple="true" v-model="formData.permission" collection="uni-id-permissions" :page-size="500" field="permission_name as text, permission_id as value" />
 				<view class="uni-form-item-tips">
 					当用户拥有以上被选中的权限时，可以访问此菜单。建议仅对子菜单配置权限，父菜单会自动包含。如不选择权限，意味着仅超级管理员可访问本菜单
 				</view>
@@ -50,9 +50,6 @@
 <script>
 	import validator from '@/js_sdk/validator/opendb-admin-menus.js';
 	import Icons from '@/pages/demo/icons/icons.vue'
-	import {
-		mapActions
-	} from 'vuex'
 
 	const db = uniCloud.database();
 	const dbCmd = db.command;
@@ -95,9 +92,6 @@
 			}
 		},
 		methods: {
-			...mapActions({
-				init: 'app/init'
-			}),
 			/**
 			 * 触发表单提交
 			 */

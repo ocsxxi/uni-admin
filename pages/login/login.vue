@@ -7,7 +7,7 @@
 			<view class="uni-title">{{$t('login.text.title')}}</view>
 		</view>
 		<view class="uni-container">
-			<uni-forms ref="form" v-model="formData" :rules="rules" @submit="submit">
+			<uni-forms ref="form" v-model="formData" :rules="rules">
 				<uni-forms-item left-icon="person-filled" name="username" labelWidth="35">
 					<input ref="usernameInput" @confirm="submitForm" class="uni-input-border" type="text"
 						:placeholder="$t('login.field.username')" v-model="formData.username" />
@@ -18,8 +18,8 @@
 					<text class="uni-icon-password-eye pointer" :class="[!showPassword ? 'uni-eye-active' : '']"
 						@click="changePassword">&#xe568;</text>
 				</uni-forms-item>
-				<uni-forms-item v-if="needCaptcha" left-icon="image" class="icon-container"
-					name="captcha" labelWidth="35">
+				<uni-forms-item v-if="needCaptcha" left-icon="image" class="icon-container" name="captcha"
+					labelWidth="35">
 					<input ref="captchaInput" @confirm="submitForm" class="uni-input-border" type="text"
 						:placeholder="$t('login.field.captcha')" v-model="formData.captcha" />
 					<view class="admin-captcha-img pointer" @click="createCaptcha">
@@ -41,8 +41,7 @@
 
 <script>
 	import {
-		mapMutations,
-		mapActions
+		mapMutations
 	} from 'vuex'
 	import config from '@/admin.config.js'
 	import {
@@ -121,15 +120,17 @@
 			this.getNeedCaptcha()
 		},
 		methods: {
-			...mapActions({
-				init: 'app/init'
-			}),
 			...mapMutations({
 				setToken(commit, tokenInfo) {
 					commit('user/SET_TOKEN', tokenInfo)
+				},
+				setUserInfo(commit, userInfo) {
+					commit('user/SET_USER_INFO', userInfo, {
+						root: true
+					})
 				}
 			}),
-			getNeedCaptcha(){
+			getNeedCaptcha() {
 				this.$request('getNeedCaptcha', {
 					functionName: 'uni-id-cf',
 					showModal: false
@@ -138,18 +139,13 @@
 						this.formData.captcha = ''
 						this.createCaptcha()
 						this.needCaptcha = true
+					} else {
+						this.needCaptcha = false
 					}
 				})
 			},
-			submit(event) {
+			submit(value = this.formData) {
 				if (this.loading) {
-					return
-				}
-				const {
-					errors,
-					value
-				} = event.detail
-				if (errors) {
 					return
 				}
 				// #ifdef H5
@@ -171,24 +167,25 @@
 						token: res.token,
 						tokenExpired: res.tokenExpired
 					})
-					return this.init().then(() => {
-						uni.showToast({
-							title: '登录成功',
-							icon: 'none'
-						})
-						uni.setStorage({
-							key: 'lastUsername',
-							data: value.username
-						});
-						uni.redirectTo({
-							url: this.indexPage,
-						})
+					this.setUserInfo(res.userInfo)
+					uni.showToast({
+						title: '登录成功',
+						icon: 'none'
+					})
+					uni.setStorage({
+						key: 'lastUsername',
+						data: value.username
+					});
+					uni.redirectTo({
+						url: this.indexPage,
 					})
 				}).catch(err => {
 					if (err.needCaptcha) {
 						this.formData.captcha = ''
 						this.createCaptcha()
 						this.needCaptcha = true
+					} else {
+						this.needCaptcha = false
 					}
 					const that = this
 					uni.showModal({
@@ -229,12 +226,9 @@
 				})
 			},
 
-			confirmForm(name, value) {
-				// this.binddata(name, value)
-				this.submitForm()
-			},
 			submitForm() {
-				this.$refs.form.submit()
+				// todo: name can`t be submit
+				this.submit()
 			},
 			initAdmin() {
 				uni.redirectTo({

@@ -11,8 +11,8 @@
 			<view class="uni-stat--x flex">
 				<uni-data-select collection="opendb-app-list" field="appid as value, name as text" orderby="text asc"
 					:defItem="1" label="应用选择" v-model="query.appid" :clear="false" />
-				<!-- <uni-data-select collection="uni-stat-app-versions" field="_id as value, version as text" label="版本选择"
-					v-model="query.version_id" /> -->
+				<uni-data-select collection="uni-stat-app-versions" :where="versionQuery"
+					field="_id as value, version as text" orderby="text asc" label="版本选择" v-model="query.version_id" />
 				<view class="flex">
 					<uni-stat-tabs label="日期选择" :current="currentDateTab" :yesterday="false" mode="date"
 						@change="changeTimeRange" />
@@ -23,7 +23,8 @@
 				</view>
 			</view>
 			<view class="uni-stat--x">
-				<uni-stat-tabs label="平台选择" type="boldLine" mode="platform" v-model="query.platform_id" />
+				<uni-stat-tabs label="平台选择" type="boldLine" mode="platform" v-model="query.platform_id"
+					@change="changePlatform" />
 			</view>
 			<view class="uni-stat--x" style="padding: 15px 0;">
 				<uni-stat-panel :items="panelData" class="uni-stat-panel" />
@@ -35,7 +36,14 @@
 			</view>
 
 			<view class="uni-stat--x p-m">
-				<uni-table :loading="loading" border stripe :emptyText="$t('common.empty')" style="overflow-y: scroll;">
+				<view class="flex-between">
+					<view class="uni-stat-card-header">信息列表</view>
+					<view class="uni-group">
+						<button class="uni-button" type="primary" size="mini" @click="openUploadPopup">上传
+							sourcemap</button>
+					</view>
+				</view>
+				<uni-table :loading="loading" border stripe :emptyText="$t('common.empty')">
 					<uni-tr>
 						<template v-for="(mapper, index) in fieldsMap">
 							<uni-th v-if="mapper.title" :key="index" align="center">
@@ -55,27 +63,14 @@
 								<!-- #endif -->
 							</uni-th>
 						</template>
+						<uni-th align="center">
+							操作
+						</uni-th>
 					</uni-tr>
 					<uni-tr v-for="(item ,i) in tableData" :key="i">
 						<template v-for="(mapper, index) in fieldsMap">
-							<uni-td v-if="mapper.field === 'msg'" :key="mapper.title" align="left">
-								<!-- #ifdef MP -->
-								{{item[mapper.field] !== undefined ? item[mapper.field] : '-'}}
-								<!-- #endif -->
-								<!-- #ifndef MP -->
-								<uni-tooltip>
-									{{item[mapper.field] !== undefined ? item[mapper.field] : '-'}}
-									<uni-icons v-if="item.msgTooltip" type="help" color="#666" />
-									<template v-if="item.msgTooltip" v-slot:content>
-										<view class="uni-stat-tooltip-l">
-											{{item.msgTooltip}}
-										</view>
-									</template>
-								</uni-tooltip>
-								<!-- #endif -->
-							</uni-td>
-							<uni-td v-else-if="mapper.field === 'count'" :key="mapper.title" align="center">
-								<text class="link-btn" @click="navTo('detail', item.hash)">
+							<uni-td v-if="mapper.field === 'count'" :key="mapper.title" align="center">
+								<text class="link-btn" @click="navTo('detail', item)">
 									{{item[mapper.field] !== undefined ? item[mapper.field] : '-'}}
 								</text>
 							</uni-td>
@@ -83,6 +78,10 @@
 								{{item[mapper.field] !== undefined ? item[mapper.field] : '-'}}
 							</uni-td>
 						</template>
+						<uni-td>
+							<button size="mini" type="primary" style="white-space: nowrap;"
+								@click="openErrPopup(item)">详 情</button>
+						</uni-td>
 					</uni-tr>
 				</uni-table>
 				<view class="uni-pagination-box">
@@ -99,19 +98,51 @@
 			</view>
 		</view>
 
-		<uni-popup ref="popupTable" type="center" :maskClick="true">
-			<view class="modal">
+		<uni-popup ref="errMsg" type="center" :animation="false" :maskClick="true">
+			<view class="modal black-theme">
 				<view class="modal-header">
-					错误设备信息
+					错误详情
 				</view>
-				<scroll-view scroll-y="true">
-					<view class="modal-content">
-						<view class="uni-form-item-tips">
-							注：仅展示最近10条
+				<scroll-view scroll-x="true" scroll-y="true">
+					<view class="modal-content" style="padding: 20px 30px;">
+						<view v-if="msgLoading" style="margin: 150px 0;text-align: center;font-size: 14px;">
+							<uni-load-more class="mb-m" :showText="false" status="loading" />
+							<view>正在解析，请稍等...</view>
 						</view>
-						<uni-stat-table :data="popupTableData" :filedsMap="popupFieldsMap" :loading="popupLoading" />
+						<!-- <pre>{{errMsg}}</pre> -->
+						<text>{{errMsg}}</text>
 					</view>
 				</scroll-view>
+				<view class="dialog-close" @click="closeErrPopup">
+					<view class="dialog-close-plus" data-id="close"></view>
+					<view class="dialog-close-plus dialog-close-rotate" data-id="close"></view>
+				</view>
+			</view>
+		</uni-popup>
+
+		<uni-popup ref="upload" type="center" :animation="false" :maskClick="true">
+			<view class="modal">
+				<view class="modal-header">
+					上传文件
+				</view>
+				<view class="modal-content" style="padding: 20px 30px;">
+					<uni-data-select collection="opendb-app-list" field="appid as value, name as text"
+						orderby="text asc" label="选择应用" v-model="uploadOptions.appid" />
+					<uni-data-select collection="uni-stat-app-platforms" field="_id as value, name as text"
+						orderby="text asc" label="选择平台" v-model="uploadOptions.platform_id" @change="changePlatform" />
+					<uni-data-select collection="uni-stat-app-versions" :where="uploadVersionQuery"
+						field="_id as value, version as text" orderby="text asc" label="选择版本"
+						v-model="uploadOptions.version_id" />
+					<view class="flex m-m">
+						<view class="label-text">选择文件:</view>
+						<button class="uni-button ml-m" type="default" size="mini" @click="openUploadPopup">打开文件夹</button>
+					</view>
+				</view>
+				<view class="dialog-close" @click="closeUploadPopup">
+					<view class="dialog-close-plus" style="background-color: #333;" data-id="close"></view>
+					<view class="dialog-close-plus dialog-close-rotate" style="background-color: #333;" data-id="close">
+					</view>
+				</view>
 			</view>
 		</uni-popup>
 
@@ -122,6 +153,11 @@
 </template>
 
 <script>
+	import {
+		stacktracey,
+		uniStracktraceyPreset
+	} from '@dcloudio/uni-stacktracey';
+
 	import {
 		mapfields,
 		stringifyQuery,
@@ -153,11 +189,17 @@
 				fieldsMap,
 				popupFieldsMap,
 				query: {
+					// type: "js",
 					dimension: "day",
 					appid: "",
 					platform_id: '',
 					version_id: '',
 					start_time: [],
+				},
+				uploadOptions: {
+					appid: "",
+					platform_id: '',
+					version_id: '',
 				},
 				options: {
 					pageCurrent: 1, // 当前页
@@ -181,6 +223,8 @@
 					_id: 'errorRate',
 					name: '错误率'
 				}],
+				errMsg: '',
+				msgLoading: false
 			}
 		},
 		computed: {
@@ -193,9 +237,32 @@
 			},
 			queryStr() {
 				return stringifyQuery(this.query)
+			},
+			versionQuery() {
+				const {
+					appid,
+					platform_id
+				} = this.query
+				const query = stringifyQuery({
+					appid,
+					platform_id
+				})
+				return query
+			},
+			uploadVersionQuery() {
+				const {
+					appid,
+					platform_id
+				} = this.uploadOptions
+				const query = stringifyQuery({
+					appid,
+					platform_id
+				})
+				return query
 			}
 		},
 		created() {
+			this.parsedErrors = {}
 			this.debounceGet = debounce(() => this.getAllData(this.queryStr))
 		},
 		watch: {
@@ -213,6 +280,10 @@
 		methods: {
 			useDatetimePicker() {
 				this.currentDateTab = -1
+			},
+			changePlatform() {
+				this.query.version_id = 0
+				this.uploadOptions.version_id = 0
 			},
 			changeTimeRange(id, index) {
 				this.currentDateTab = index
@@ -376,14 +447,14 @@
 				const mainTableTemp = db.collection('uni-stat-error-result').where(query).getTemp()
 				const versions = db.collection('uni-stat-app-versions')
 					.where(filterAppid)
-					.orderBy('start_time ', 'desc ')
+					.orderBy('count', 'desc ')
 					.getTemp()
 
 				const platforms = db.collection('uni-stat-app-platforms')
 					.getTemp()
 
 				db.collection(mainTableTemp, versions, platforms)
-					.orderBy('count', 'desc')
+					.orderBy('last_time', 'desc')
 					.skip((pageCurrent - 1) * this.pageSize)
 					.limit(this.pageSize)
 					.get({
@@ -404,6 +475,7 @@
 							const p = item.platform_id[0]
 							item.version = v && v.version
 							item.platform = p && p.name
+							item.platform_code = p && p.code
 							tempData.push(item)
 						}
 						this.getTotalCount(query).then(res => {
@@ -440,33 +512,12 @@
 					})
 			},
 
-			getPopupTableData(hash) {
-				this.popupTableData = []
-				this.popupLoading = true
-				const db = uniCloud.database()
-				db.collection('uni-stat-error-logs')
-					.where(`error_hash == "${hash}"`)
-					.orderBy('create_time', 'desc')
-					.limit(10)
-					.get()
-					.then(res => {
-						const data = res.result.data
-						for (const item of data) {
-							item.create_time = parseDateTime(item.create_time, 'dateTime')
-						}
-						this.popupTableData = data
-					})
-					.finally(() => {
-						this.popupLoading = false
-					})
-			},
-
-			navTo(url, id) {
+			navTo(url, item) {
 				if (url.indexOf('http') > -1) {
 					window.open(url)
 				} else {
-					if (id) {
-						url = `${url}?hash=${id}`
+					if (item) {
+						url = `${url}?error_hash=${item.hash}&create_time=${item.start_time}`
 					}
 					uni.navigateTo({
 						url
@@ -482,13 +533,115 @@
 					}
 				})
 				return strArr.join()
-			}
+			},
+			openErrPopup(item) {
+				console.log('.........item', item);
+				const err = item.msgTooltip
+				if (this.msgLoading) return
+				this.$refs.errMsg.open()
+				if (!err) {
+					this.errMsg = '暂无错误数据'
+				}
+				this.errMsg = ''
+				const oldMsg = this.parsedErrors[err]
+				if (!oldMsg || oldMsg === err) {
+					this.msgLoading = true
+					this.parseError(item)
+				} else {
+					this.errMsg = oldMsg
+				}
+			},
+			closeErrPopup() {
+				this.$refs.errMsg.close()
+			},
+			parseError(item) {
+				let {
+					msgTooltip: err,
+					appid,
+					platform_code,
+					version
+				} = item
+
+				console.log('’。。。。。。', err);
+				const sourcemapUrl =
+					'https://7463-tcb-uzyfn59tqxjxtnbab2e2c-5ba40b-1303909289.tcb.qcloud.la/__UNI__/uni-stat/sourcemap'
+				let base = `${sourcemapUrl}/__UNI_APPID__/h5/3.3.8`
+				if (platform_code === 'web') {
+					base = `${sourcemapUrl}/__UNI_APPID__/h5/3.3.8`
+				} else if (platform_code === 'android' || platform_code === 'ios') {
+					base = `${sourcemapUrl}/__UNI_APPID__/app-plus/${version}`
+				} else if (platform_code.indexOf('mp-') > -1) {
+					err = err.replace(/['"]+/g, '')
+					version = '3.4.12'
+					base = `${sourcemapUrl}/__UNI_APPID__/${platform_code}/${version}`
+					const preset = uniStracktraceyPreset({
+						base
+					});
+					setTimeout(() => {
+						console.log('..........mp');
+						stacktracey(err, {
+							preset,
+						}).then(wxErrRes => {
+							stacktracey(wxErrRes, {
+								preset,
+							}).then(res => {
+								this.errMsg = res
+								this.parsedErrors[err] = res
+							}).finally(() => {
+								this.msgLoading = false
+							});
+						}).finally(() => {
+							this.msgLoading = false
+						});
+					}, 100)
+					return
+				} else {
+					base = `${sourcemapUrl}/__UNI_APPID__/${platform_code}/${version}`
+				}
+				const preset = uniStracktraceyPreset({
+					base
+				});
+				setTimeout(() => {
+					console.log('..........other');
+					stacktracey(err, {
+						preset,
+					}).then(res => {
+						this.errMsg = res
+						this.parsedErrors[err] = res
+					}).finally(() => {
+						this.msgLoading = false
+					});
+				}, 100)
+			},
+			openUploadPopup() {
+				const {
+					appid,
+					platform_id,
+					version_id
+				} = this.query
+
+				this.uploadOptions = {
+					appid,
+					platform_id,
+					version_id
+				}
+				this.$refs.upload.open()
+			},
+			closeUploadPopup() {
+				this.$refs.upload.close()
+			},
 		}
 
 	}
 </script>
 
 <style>
+	.flex-between {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
 	.uni-stat-panel {
 		box-shadow: unset;
 		border-bottom: 1px solid #eee;
@@ -499,5 +652,37 @@
 	.uni-stat-tooltip-s {
 		width: 160px;
 		white-space: normal;
+	}
+
+	.black-theme {
+		background-color: #333;
+		color: #fff;
+	}
+
+	.dialog-close {
+		cursor: pointer;
+		position: absolute;
+		top: 0;
+		right: 0;
+		/* #ifndef APP-NVUE */
+		display: flex;
+		/* #endif */
+		flex-direction: row;
+		align-items: center;
+		padding: 20px;
+		margin-top: 10px;
+	}
+
+	.dialog-close-plus {
+		width: 20px;
+		height: 2px;
+		background-color: #fff;
+		border-radius: 2px;
+		transform: rotate(45deg);
+	}
+
+	.dialog-close-rotate {
+		position: absolute;
+		transform: rotate(-45deg);
 	}
 </style>

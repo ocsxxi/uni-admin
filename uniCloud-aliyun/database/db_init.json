@@ -25,7 +25,7 @@
 		"data": [{
 			"menu_id": "index",
 			"name": "首页",
-			"icon": "admin-icons-dashboard",
+			"icon": "uni-icons-home",
 			"url": "/",
 			"sort": 100,
 			"parent_id": "",
@@ -136,16 +136,6 @@
 			"parent_id": "uni-stat",
 			"permission": [],
 			"enable": true,
-			"menu_id": "uni-stat-index",
-			"name": "统计首页",
-			"icon": "admin-icons-tongjishouye",
-			"url": "/pages/uni-stat/index/index",
-			"sort": 2110,
-			"create_date": 1638356902516
-		}, {
-			"parent_id": "uni-stat",
-			"permission": [],
-			"enable": true,
 			"menu_id": "uni-stat-device",
 			"name": "设备统计",
 			"icon": "admin-icons-shebeitongji",
@@ -217,7 +207,7 @@
 			"permission": [],
 			"enable": true,
 			"menu_id": "uni-stat-user",
-			"name": "用户统计",
+			"name": "注册用户统计",
 			"icon": "admin-icons-yonghutongji",
 			"url": "",
 			"sort": 2122,
@@ -381,26 +371,6 @@
 			"icon": "",
 			"url": "/pages/uni-stat/error/app/app",
 			"sort": 2172,
-			"create_date": 1638356902516
-		}, {
-			"parent_id": "uni-stat",
-			"permission": [],
-			"enable": true,
-			"menu_id": "uni-stat-link-help",
-			"name": "帮助",
-			"icon": "admin-icons-help",
-			"url": "",
-			"sort": 2190,
-			"create_date": 1638356902516
-		}, {
-			"parent_id": "uni-stat-link-help",
-			"permission": [],
-			"enable": true,
-			"menu_id": "uni-stat-link-help-article1",
-			"name": "小程序域名配置说明",
-			"icon": "",
-			"url": "https://uniapp.dcloud.net.cn/uni-stat.html",
-			"sort": 2194,
 			"create_date": 1638356902516
 		}]
 	},
