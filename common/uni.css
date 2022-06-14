@@ -495,7 +495,7 @@ button:after {
 .modal-footer {
 	padding: 20px;
 	display: flex;
-	justify-content: end;
+	justify-content: flex-end;
 	align-items: center;
 	/* border-top: 1px solid #eee; */
 }

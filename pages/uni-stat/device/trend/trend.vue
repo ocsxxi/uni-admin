@@ -1,4 +1,5 @@
 <template>
+	<!-- 对应页面：设备统计-趋势分析  -->
 	<view class="fix-top-window">
 		<view class="uni-header">
 			<uni-stat-breadcrumb class="uni-stat-breadcrumb-on-phone" />
@@ -85,7 +86,8 @@
 				query: {
 					dimension: "hour",
 					appid: '',
-					platform_id: '', 					version_id: '',
+					platform_id: '',
+					version_id: '',
 					channel_id: '',
 					start_time: [],
 				},
@@ -173,12 +175,17 @@
 					platform_id
 				})
 			},
-			versionQuery() {  				const {
+			versionQuery() {
+				const {
 					appid,
 					platform_id
-				} = this.query 				const query = stringifyQuery({  					appid,  					platform_id
+				} = this.query
+				const query = stringifyQuery({
+					appid,
+					platform_id
 				})
-				return query  			}
+				return query
+			}
 		},
 		created() {
 			this.debounceGet = debounce(() => this.getAllData(this.query))

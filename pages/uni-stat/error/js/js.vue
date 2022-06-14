@@ -1,4 +1,5 @@
 <template>
+	<!-- 对应页面： js报错 -->
 	<view class="fix-top-window">
 		<view class="uni-header">
 			<uni-stat-breadcrumb class="uni-stat-breadcrumb-on-phone" />
@@ -39,9 +40,11 @@
 				<view class="flex-between">
 					<view class="uni-stat-card-header">信息列表</view>
 					<view class="uni-group">
+						<!-- #ifdef VUE2 -->
 						<!-- #ifdef H5 -->
 						<button class="uni-button" type="primary" size="mini" @click="openUploadPopup">上传
 							sourcemap</button>
+						<!-- #endif -->
 						<!-- #endif -->
 					</view>
 				</view>
@@ -65,9 +68,12 @@
 								<!-- #endif -->
 							</uni-th>
 						</template>
+						<!-- vue3 暂不支持解析 sourcemap -->
+						<!-- #ifdef VUE2 -->
 						<uni-th align="center">
 							操作
 						</uni-th>
+						<!-- #endif -->
 					</uni-tr>
 					<uni-tr v-for="(item ,i) in tableData" :key="i">
 						<template v-for="(mapper, index) in fieldsMap">
@@ -80,10 +86,12 @@
 								{{item[mapper.field] !== undefined ? item[mapper.field] : '-'}}
 							</uni-td>
 						</template>
+						<!-- #ifdef VUE2 -->
 						<uni-td>
 							<button size="mini" type="primary" style="white-space: nowrap;"
 								@click="openErrPopup(item)">详 情</button>
 						</uni-td>
+						<!-- #endif -->
 					</uni-tr>
 				</uni-table>
 				<view class="uni-pagination-box">
@@ -143,6 +151,7 @@
 					<view v-if="!vaildate" class="upload-msg-warning">
 						{{uploadMsg}}
 					</view>
+					<!-- todo：上传 loading 状态 、进度条 -->
 				</view>
 				<view class="dialog-close" @click="closeUploadPopup">
 					<view class="dialog-close-plus" style="background-color: #333;" data-id="close"></view>
@@ -174,10 +183,13 @@
 		fieldsMap,
 		popupFieldsMap
 	} from './fieldsMap.js'
+	// todo: vue3 暂不支持
+	// #ifdef VUE2
 	import {
 		stacktracey,
 		uniStracktraceyPreset
 	} from '@dcloudio/uni-stacktracey';
+	// #endif
 
 	const panelOption = [{
 		title: '错误总数',
@@ -539,16 +551,7 @@
 					})
 				}
 			},
-			createStr(maps, fn, prefix = 'total_') {
-				const strArr = []
-				maps.forEach(mapper => {
-					if (field.hasOwnProperty('value')) {
-						const fieldName = mapper.field
-						strArr.push(`${fn}(${fieldName}) as ${prefix + fieldName}`)
-					}
-				})
-				return strArr.join()
-			},
+
 			openErrPopup(item) {
 				const err = item.msgTooltip
 				if (this.msgLoading) return

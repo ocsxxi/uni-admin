@@ -1,4 +1,5 @@
 <template>
+	<!-- 对应页面：设备统计-粘性  -->
 	<view class="fix-top-window">
 		<view class="uni-header">
 			<uni-stat-breadcrumb class="uni-stat-breadcrumb-on-phone" />
@@ -160,7 +161,7 @@
 			},
 			changePlatform(id) {
 				this.getChannelData(null, id)
-        this.query.version_id = 0
+				this.query.version_id = 0
 			},
 			changeTimeRange(id, index) {
 				this.currentDateTab = index
@@ -169,6 +170,7 @@
 				this.query.start_time = [start, end]
 			},
 
+			// 此处 util 中的 groupField 不满足需求，特殊处理 groupField
 			createStr(fields, type = "visit_depth_data") {
 				const l = fields.length
 				const p = this.options[type].prefix
@@ -285,9 +287,9 @@
 							}
 						}
 						const tableData = []
-						const reducer = (previousValue, currentValue) => previousValue + currentValue;
+						// 归并得出访问人数 users、访问次数 times 的总和，用于计算占比
 						const total = {}
-
+						const reducer = (previousValue, currentValue) => previousValue + currentValue;
 						let users = rows.filter(row => row.visit_devices)
 							.map(row => row.visit_devices)
 						users = users.length ? users.reduce(reducer) : 0

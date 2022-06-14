@@ -1,9 +1,9 @@
 <template>
+	<!-- 对应页面：渠道（app）  -->
 	<view class="fix-top-window">
 		<view class="uni-header">
 			<uni-stat-breadcrumb class="uni-stat-breadcrumb-on-phone" />
 			<view class="uni-group">
-				<!-- <view class="uni-title">渠道（app）</view> -->
 				<view class="uni-sub-title hide-on-phone">
 					<uni-link href="https://ask.dcloud.net.cn/article/35974"
 						text="支持Android App多渠道统计。设置App渠道包的方法，请参考 https://ask.dcloud.net.cn/article/35974。"></uni-link>
@@ -264,12 +264,14 @@
 								xAxis.push(x)
 							}
 						}
+						// 将数据中渠道 id 去重
 						const hasChannels = []
 						data.forEach(item => {
 							if (hasChannels.indexOf(item.channel_id) < 0) {
 								hasChannels.push(item.channel_id)
 							}
 						})
+						// 请求所有渠道数据，与 hasChannels 匹配得出 channel_name
 						let allChannels = []
 						this.getChannels().then(res => {
 							allChannels = res.result.data
@@ -290,6 +292,7 @@
 								delete mapper[0].value
 								mapper[0].formatter = ''
 								for (const item of data) {
+									// 将 item 根据 mapper 计算、格式化
 									mapfields(mapper, item, item)
 									let date = item.start_time
 									const x = formatDate(date, this.dimension)
@@ -370,17 +373,6 @@
 					}).finally(() => {
 						this.loading = false
 					})
-			},
-
-			createStr(maps, fn, prefix = 'total_') {
-				const strArr = []
-				maps.forEach(mapper => {
-					if (field.hasOwnProperty('value')) {
-						const fieldName = mapper.field
-						strArr.push(`${fn}(${fieldName}) as ${prefix + fieldName}`)
-					}
-				})
-				return strArr.join()
 			},
 
 			getPanelData() {

@@ -1,4 +1,5 @@
 <template>
+		<!-- 对应页面： app崩溃 -->
 	<view class="fix-top-window">
 		<view class="uni-header">
 			<uni-stat-breadcrumb class="uni-stat-breadcrumb-on-phone" />
@@ -172,6 +173,7 @@
 		data() {
 			return {
 				fieldsMap,
+				//todo：要与schema 生成页面一起工作，stringifyQuery 需要与 schema 查询逻辑相容
 				query: {
 					type: "crash",
 					dimension: "day",
@@ -265,6 +267,7 @@
 					version_id,
 					start_time
 				} = this.query
+				// 从本地存储中取到数据做过滤
 				const platforms = uni.getStorageSync('platform_channel_last_data')
 				const versions = uni.getStorageSync('uni-stat-app-versions_last_data')
 				const p = Array.isArray(platforms) && platforms.find(p => p._id === platform_id)
