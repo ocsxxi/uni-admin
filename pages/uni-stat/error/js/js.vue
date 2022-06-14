@@ -144,11 +144,6 @@
 						{{uploadMsg}}
 					</view>
 				</view>
-			<!-- 	<view class="modal-footer">
-					<view class="uni-group">
-						<button class="uni-button" type="primary" @click="uploadFile">上传</button>
-					</view>
-				</view> -->
 				<view class="dialog-close" @click="closeUploadPopup">
 					<view class="dialog-close-plus" style="background-color: #333;" data-id="close"></view>
 					<view class="dialog-close-plus dialog-close-rotate" style="background-color: #333;" data-id="close">
@@ -273,6 +268,7 @@
 				return query
 			},
 			vaildate(){
+				// 检验 this.uploadOptions 所有项都有值
 				const allItemHasVaule = Object.keys(this.uploadOptions).every(k => this.uploadOptions[k])
 				if (allItemHasVaule && this.uploadMsg) {
 					this.uploadMsg = ''
@@ -297,7 +293,6 @@
 			}
 		},
 		methods: {
-			uploadFile,
 
 			useDatetimePicker() {
 				this.currentDateTab = -1
@@ -583,6 +578,7 @@
 
 				const sourcemapUrl =
 					'https://7463-tcb-uzyfn59tqxjxtnbab2e2c-5ba40b-1303909289.tcb.qcloud.la/__UNI__/uni-stat/sourcemap'
+				// todo：现在不是所有平台都有版本，下面的分支为临时处理 base，待所有平台都有版本时需重构
 				let base = `${sourcemapUrl}/__UNI_APPID__/h5/3.3.8`
 				if (platform_code === 'web') {
 					base = `${sourcemapUrl}/__UNI_APPID__/h5/3.3.8`
@@ -596,7 +592,6 @@
 						base
 					});
 					setTimeout(() => {
-						console.log('..........mp');
 						stacktracey(err, {
 							preset,
 						}).then(wxErrRes => {
@@ -619,6 +614,7 @@
 				const preset = uniStracktraceyPreset({
 					base
 				});
+				// stacktracey 解析 sourcemap 耗时长，会阻塞 ui，放到后面执行
 				setTimeout(() => {
 					stacktracey(err, {
 						preset,
@@ -659,10 +655,12 @@
 				const version = Array.isArray(versions) && versions.find(v => v._id === version_id).text
 				const prefix = `__UNI__/uni-stat/sourcemap/${appid}/${platform}/${version}/`
 				console.log('...........prefix', prefix);
+				// 不上传到当前空间，需初始化上传的目标云空间
 				const goalCloud = uniCloud.init({
 					provider: 'tencent',
 					spaceId: 'tcb-uzyfn59tqxjxtnbab2e2c-5ba40b'
 				})
+				// 原生 input 上传逻辑
 				const inputEl = !inputEl && document.createElement('input')
 				inputEl.type = 'file'
 				inputEl.directory = true
